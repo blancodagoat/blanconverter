@@ -1,0 +1,55 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "blancodagoat"
+    assignees:
+      - "blancodagoat"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automerge"
+    ignore:
+      # Ignore updates for packages with known issues
+      - dependency-name: "xlsx"
+        versions: ["*"]
+      - dependency-name: "fluent-ffmpeg"
+        versions: ["*"]
+      - dependency-name: "puppeteer"
+        versions: ["<24.9.0"]
+      - dependency-name: "canvas"
+        versions: ["*"]
+      - dependency-name: "heic-convert"
+        versions: ["*"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "blancodagoat"
+    assignees:
+      - "blancodagoat"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge" 
