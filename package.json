@@ -9,7 +9,8 @@
     "build": "npm run build-css && npm run build-js",
     "build-css": "sass src/styles/main.scss public/css/style.css --style compressed",
     "build-js": "webpack --mode production",
-    "watch": "sass src/styles/main.scss public/css/style.css --watch"
+    "watch": "sass src/styles/main.scss public/css/style.css --watch",
+    "vercel-build": "npm run build"
   },
   "keywords": [
     "file-converter",
