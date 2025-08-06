@@ -43,7 +43,7 @@
     "libreoffice-convert": "^1.4.1",
     "pdf-parse": "^1.1.1",
     "svg2pdf.js": "^2.2.4",
-    "archiver": "^6.0.1",
+    "archiver": "^7.0.1",
     "unzipper": "^0.10.14",
     "tar": "^6.2.0",
     "7zip-bin": "^5.1.1",
