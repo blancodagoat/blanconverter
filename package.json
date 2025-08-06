@@ -34,7 +34,7 @@
     "docx": "^8.5.0",
     "xlsx": "^0.18.5",
     "cors": "^2.8.5",
-    "helmet": "^7.1.0",
+    "helmet": "^8.1.0",
     "compression": "^1.7.4",
     "express-rate-limit": "^7.1.5",
     "mammoth": "^1.6.0",
