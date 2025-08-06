@@ -9,19 +9,7 @@
     "build": "npm run build-css && npm run build-js",
     "build-css": "sass src/styles/main.scss public/css/style.css --style compressed",
     "build-js": "webpack --mode production",
-    "watch": "sass src/styles/main.scss public/css/style.css --watch",
-    "test": "node test-conversions.js",
-    "test-images": "node test-image-conversions.js",
-    "test-audio": "node test-audio-conversions.js",
-    "test-video": "node test-video-conversions.js",
-    "test-ebooks": "node test-ebook-conversions.js",
-    "test-archives": "node test-archive-conversions.js",
-    "test-fonts": "node test-font-conversions.js",
-    "test-cad": "node test-cad-conversions.js",
-    "test-vectors": "node test-vector-conversions.js",
-    "test-data": "node test-data-conversions.js",
-    "test-disk-images": "node test-disk-image-conversions.js",
-    "test-specialized": "node test-specialized-conversions.js"
+    "watch": "sass src/styles/main.scss public/css/style.css --watch"
   },
   "keywords": [
     "file-converter",
