@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -25,25 +25,8 @@ jobs:
       run: npm run build
     
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./public
-        force_orphan: true
-    
-    - name: Create deployment package
-      run: |
-        mkdir -p dist
-        cp -r public/* dist/
-        cp package.json dist/
-        cp server.js dist/
-        cp -r src dist/
-        tar -czf file-converter.tar.gz dist/
-    
-    - name: Upload deployment package
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-package
-        path: file-converter.tar.gz
-        retention-days: 30 
+        force_orphan: true 
