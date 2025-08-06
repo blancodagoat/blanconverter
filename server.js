@@ -75,9 +75,9 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://cdnjs.buymeacoffee.com", "https://va.vercel-scripts.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "https://va.vercel-scripts.com"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"]
         }
@@ -90,7 +90,7 @@ app.use(compression());
 // CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://yourusername.github.io'] 
+        ? ['https://blancodagoat.github.io', 'https://blanconverter.vercel.app'] 
         : ['http://localhost:3000', 'http://localhost:8080'],
     credentials: true
 }));
@@ -111,6 +111,11 @@ app.use('/api/', limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Static file serving
 app.use(express.static('public'));
@@ -664,6 +669,21 @@ app.use((error, req, res, next) => {
     });
 });
 
+// Global error handler
+app.use((error, req, res, next) => {
+    logger.error('Unhandled error in request', error, {
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+    });
+    
+    res.status(500).json({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : error.message
+    });
+});
+
 // 404 handler
 app.use((req, res) => {
     logger.warn(`404 Not Found`, { 
@@ -688,6 +708,21 @@ if (process.env.NODE_ENV !== 'production') {
         });
     });
 }
+
+// Global error handler
+app.use((error, req, res, next) => {
+    logger.error('Unhandled error in request', error, {
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+    });
+    
+    res.status(500).json({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : error.message
+    });
+});
 
 // Cleanup function to remove old files
 const cleanupOldFiles = async () => {
