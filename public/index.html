@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Converter - Free Online File Conversion Tool</title>
+    <meta name="description" content="Convert files online for free. Support for images, documents, audio, and video files. No registration required.">
+    <meta name="keywords" content="file converter, online converter, free converter, image converter, document converter, audio converter, video converter">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blancodagoat.github.io/blanconverter/">
+    <meta property="og:title" content="File Converter - Free Online File Conversion Tool">
+    <meta property="og:description" content="Convert files online for free. Support for images, documents, audio, and video files.">
+    <meta property="og:image" content="https://blancodagoat.github.io/blanconverter/public/images/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://blancodagoat.github.io/blanconverter/">
+    <meta property="twitter:title" content="File Converter - Free Online File Conversion Tool">
+    <meta property="twitter:description" content="Convert files online for free. Support for images, documents, audio, and video files.">
+    <meta property="twitter:image" content="https://blancodagoat.github.io/blanconverter/public/images/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>File Converter</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#formats" class="nav-link">Formats</a>
+                    <a href="#about" class="nav-link">About</a>
+                </div>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Convert Files Online
+                    <span class="hero-subtitle">Free, Fast, and Secure</span>
+                </h1>
+                <p class="hero-description">
+                    Transform your files between different formats instantly. 
+                    No registration required, completely free for everyone.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Formats</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Free</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Converter -->
+    <main class="main">
+        <div class="container">
+            <!-- File Upload Area -->
+            <section class="converter-section">
+                <div class="converter-card">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h3 class="upload-title">Drop files here or click to upload</h3>
+                            <p class="upload-subtitle">Support for images, documents, audio, and video files</p>
+                            <button class="upload-btn" id="uploadBtn">
+                                <i class="fas fa-plus"></i>
+                                Choose Files
+                            </button>
+                            <input type="file" id="fileInput" multiple accept="*/*" hidden>
+                        </div>
+                        <div class="upload-drag-overlay">
+                            <i class="fas fa-file-upload"></i>
+                            <span>Drop files here</span>
+                        </div>
+                    </div>
+
+                    <!-- File List -->
+                    <div class="file-list" id="fileList" style="display: none;">
+                        <h3 class="file-list-title">Files to Convert</h3>
+                        <div class="file-items" id="fileItems"></div>
+                        <div class="file-actions">
+                            <button class="btn btn-secondary" id="clearAllBtn">
+                                <i class="fas fa-trash"></i>
+                                Clear All
+                            </button>
+                            <button class="btn btn-primary" id="convertAllBtn">
+                                <i class="fas fa-magic"></i>
+                                Convert All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Conversion Progress -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-card">
+                    <h3 class="progress-title">Converting Files</h3>
+                    <div class="progress-list" id="progressList"></div>
+                </div>
+            </section>
+
+            <!-- Results -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-card">
+                    <h3 class="results-title">Conversion Complete</h3>
+                    <div class="results-list" id="resultsList"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose Our File Converter?</h2>
+                <p class="section-subtitle">Professional-grade conversion tools made accessible to everyone</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Secure & Private</h3>
+                    <p class="feature-description">
+                        Your files are processed locally and automatically deleted. 
+                        No data is stored on our servers.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Lightning Fast</h3>
+                    <p class="feature-description">
+                        Advanced algorithms ensure quick conversion times 
+                        without compromising quality.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Mobile Friendly</h3>
+                    <p class="feature-description">
+                        Works perfectly on all devices - desktop, tablet, 
+                        and mobile phones.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-infinity"></i>
+                    </div>
+                    <h3 class="feature-title">No Limits</h3>
+                    <p class="feature-description">
+                        Convert unlimited files with no size restrictions 
+                        or hidden fees.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Supported Formats -->
+    <section class="formats" id="formats">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Supported File Formats</h2>
+                <p class="section-subtitle">Convert between hundreds of different file formats</p>
+            </div>
+            <div class="formats-grid">
+                <div class="format-category">
+                    <div class="format-header">
+                        <i class="fas fa-image"></i>
+                        <h3>Images</h3>
+                    </div>
+                    <div class="format-list">
+                        <span class="format-item">JPG</span>
+                        <span class="format-item">PNG</span>
+                        <span class="format-item">WebP</span>
+                        <span class="format-item">GIF</span>
+                        <span class="format-item">BMP</span>
+                        <span class="format-item">TIFF</span>
+                        <span class="format-item">SVG</span>
+                        <span class="format-item">ICO</span>
+                    </div>
+                </div>
+                <div class="format-category">
+                    <div class="format-header">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>Documents</h3>
+                    </div>
+                    <div class="format-list">
+                        <span class="format-item">PDF</span>
+                        <span class="format-item">DOCX</span>
+                        <span class="format-item">TXT</span>
+                        <span class="format-item">RTF</span>
+                        <span class="format-item">XLSX</span>
+                        <span class="format-item">CSV</span>
+                        <span class="format-item">PPTX</span>
+                        <span class="format-item">ODT</span>
+                    </div>
+                </div>
+                <div class="format-category">
+                    <div class="format-header">
+                        <i class="fas fa-music"></i>
+                        <h3>Audio</h3>
+                    </div>
+                    <div class="format-list">
+                        <span class="format-item">MP3</span>
+                        <span class="format-item">WAV</span>
+                        <span class="format-item">FLAC</span>
+                        <span class="format-item">AAC</span>
+                        <span class="format-item">OGG</span>
+                        <span class="format-item">M4A</span>
+                        <span class="format-item">WMA</span>
+                        <span class="format-item">AIFF</span>
+                    </div>
+                </div>
+                <div class="format-category">
+                    <div class="format-header">
+                        <i class="fas fa-video"></i>
+                        <h3>Video</h3>
+                    </div>
+                    <div class="format-list">
+                        <span class="format-item">MP4</span>
+                        <span class="format-item">AVI</span>
+                        <span class="format-item">MOV</span>
+                        <span class="format-item">MKV</span>
+                        <span class="format-item">WebM</span>
+                        <span class="format-item">FLV</span>
+                        <span class="format-item">WMV</span>
+                        <span class="format-item">3GP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2 class="about-title">About File Converter</h2>
+                    <p class="about-description">
+                        File Converter is a free, open-source tool designed to make file conversion 
+                        accessible to everyone. Whether you're a student, professional, or casual user, 
+                        our platform provides the tools you need to work with different file formats.
+                    </p>
+                    <p class="about-description">
+                        Built with modern web technologies, we ensure fast, secure, and reliable 
+                        conversions while maintaining the highest quality standards. Your privacy 
+                        is our priority - all files are processed locally and never stored on our servers.
+                    </p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <i class="fas fa-check"></i>
+                            <span>No registration required</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-check"></i>
+                            <span>Completely free to use</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-check"></i>
+                            <span>Open source project</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="about-stats">
+                        <div class="about-stat">
+                            <span class="about-stat-number">1M+</span>
+                            <span class="about-stat-label">Files Converted</span>
+                        </div>
+                        <div class="about-stat">
+                            <span class="about-stat-number">50+</span>
+                            <span class="about-stat-label">File Formats</span>
+                        </div>
+                        <div class="about-stat">
+                            <span class="about-stat-number">99.9%</span>
+                            <span class="about-stat-label">Uptime</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>File Converter</span>
+                    </div>
+                    <p class="footer-description">
+                        Free online file conversion tool for everyone. 
+                        Convert images, documents, audio, and video files instantly.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#formats">Formats</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="https://github.com/blancodagoat/blanconverter" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/blancodagoat/blanconverter/issues" target="_blank">Report Issue</a></li>
+                        <li><a href="https://github.com/blancodagoat/blanconverter/discussions" target="_blank">Discussions</a></li>
+                        <li><a href="mailto:support@fileconverter.com">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                        <li><a href="/terms">Terms of Service</a></li>
+                        <li><a href="/license">License</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 File Converter. All rights reserved.</p>
+                <p>Made with ❤️ for the community</p>
+            </div>
+            
+            <!-- Buy Me a Pizza -->
+            <div class="coffee-section">
+                <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="blancodagoat" data-color="#808080" data-emoji="🍕"  data-font="Cookie" data-text="Buy me a pizza" data-outline-color="#ffffff" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/app.js"></script>
+</body>
+</html> 
