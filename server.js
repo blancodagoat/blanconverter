@@ -26,6 +26,45 @@ const DataConverter = require('./src/server/dataConverter');
 const DiskImageConverter = require('./src/server/diskImageConverter');
 const SpecializedConverter = require('./src/server/specializedConverter');
 
+// Comprehensive logging utility
+const logger = {
+    info: (message, data = {}) => {
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] INFO: ${message}`, data);
+    },
+    error: (message, error = null, data = {}) => {
+        const timestamp = new Date().toISOString();
+        console.error(`[${timestamp}] ERROR: ${message}`, error ? error.stack || error : '', data);
+    },
+    warn: (message, data = {}) => {
+        const timestamp = new Date().toISOString();
+        console.warn(`[${timestamp}] WARN: ${message}`, data);
+    },
+    debug: (message, data = {}) => {
+        if (process.env.NODE_ENV !== 'production') {
+            const timestamp = new Date().toISOString();
+            console.log(`[${timestamp}] DEBUG: ${message}`, data);
+        }
+    },
+    conversion: (operation, fileInfo, result) => {
+        const timestamp = new Date().toISOString();
+        const logData = {
+            operation,
+            originalFile: fileInfo.originalname,
+            originalSize: fileInfo.size,
+            originalType: fileInfo.mimetype,
+            targetFormat: result?.targetFormat,
+            success: result?.success,
+            error: result?.error,
+            processingTime: result?.processingTime,
+            outputSize: result?.outputSize,
+            ip: fileInfo.ip,
+            userAgent: fileInfo.userAgent
+        };
+        console.log(`[${timestamp}] CONVERSION: ${operation}`, logData);
+    }
+};
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -235,8 +274,19 @@ app.get('/api/formats', (req, res) => {
  * Convert single file
  */
 app.post('/api/convert', upload.single('file'), async (req, res) => {
+    const startTime = Date.now();
+    const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
     try {
+        logger.info(`Starting conversion request`, { 
+            requestId, 
+            ip: req.ip, 
+            userAgent: req.get('User-Agent'),
+            timestamp: new Date().toISOString()
+        });
+
         if (!req.file) {
+            logger.warn(`No file uploaded`, { requestId, ip: req.ip });
             return res.status(400).json({
                 error: 'No file uploaded'
             });
@@ -244,16 +294,37 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
 
         const { targetFormat } = req.body;
         if (!targetFormat) {
+            logger.warn(`Target format not specified`, { 
+                requestId, 
+                ip: req.ip, 
+                fileName: req.file.originalname 
+            });
             return res.status(400).json({
                 error: 'Target format not specified'
             });
         }
 
         const file = req.file;
-        const fileType = this.getFileCategory(file.mimetype);
-        const converter = this.getConverter(fileType);
+        const fileType = getFileCategory(file.mimetype);
+        const converter = getConverter(fileType);
+
+        logger.info(`File analysis complete`, {
+            requestId,
+            fileName: file.originalname,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+            detectedType: fileType,
+            targetFormat: targetFormat,
+            hasConverter: !!converter
+        });
 
         if (!converter) {
+            logger.warn(`Unsupported file type`, {
+                requestId,
+                fileName: file.originalname,
+                mimeType: file.mimetype,
+                detectedType: fileType
+            });
             return res.status(400).json({
                 error: 'Unsupported file type'
             });
@@ -262,17 +333,39 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
         // Handle video to audio extraction
         let result;
         if (fileType === 'video' && ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(targetFormat.toLowerCase())) {
+            logger.info(`Extracting audio from video`, {
+                requestId,
+                fileName: file.originalname,
+                targetFormat: targetFormat
+            });
             // Extract audio from video
-            result = await audioConverter.extractFromVideo(file.path, targetFormat);
+            result = await AudioConverter.extractFromVideo(file.path, targetFormat);
         } else {
+            logger.info(`Starting regular conversion`, {
+                requestId,
+                fileName: file.originalname,
+                fromType: fileType,
+                toFormat: targetFormat
+            });
             // Regular conversion
             result = await converter.convert(file.path, targetFormat);
         }
 
+        const processingTime = Date.now() - startTime;
+
+        logger.info(`Conversion completed successfully`, {
+            requestId,
+            fileName: file.originalname,
+            processingTime: `${processingTime}ms`,
+            outputFile: result.filename,
+            outputSize: result.size
+        });
+
         // Clean up uploaded file
         await fs.unlink(file.path);
+        logger.debug(`Cleaned up uploaded file`, { requestId, filePath: file.path });
 
-        res.json({
+        const response = {
             success: true,
             originalFile: {
                 name: file.originalname,
@@ -285,17 +378,49 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
                 type: result.mimeType,
                 url: `/download/${result.filename}`
             }
+        };
+
+        logger.conversion('single', {
+            originalname: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        }, {
+            targetFormat: targetFormat,
+            success: true,
+            processingTime: processingTime,
+            outputSize: result.size
         });
 
+        res.json(response);
+
     } catch (error) {
-        console.error('Conversion error:', error);
+        const processingTime = Date.now() - startTime;
+        
+        logger.error(`Conversion failed`, error, {
+            requestId,
+            fileName: req.file?.originalname,
+            targetFormat: req.body?.targetFormat,
+            processingTime: `${processingTime}ms`,
+            ip: req.ip,
+            userAgent: req.get('User-Agent'),
+            errorStack: error.stack
+        });
         
         // Clean up uploaded file on error
         if (req.file) {
             try {
                 await fs.unlink(req.file.path);
+                logger.debug(`Cleaned up uploaded file after error`, { 
+                    requestId, 
+                    filePath: req.file.path 
+                });
             } catch (cleanupError) {
-                console.error('Error cleaning up file:', cleanupError);
+                logger.error(`Error cleaning up file after conversion failure`, cleanupError, {
+                    requestId,
+                    filePath: req.file.path
+                });
             }
         }
 
@@ -541,17 +666,36 @@ app.use((error, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
+    logger.warn(`404 Not Found`, { 
+        path: req.path, 
+        method: req.method, 
+        ip: req.ip 
+    });
     res.status(404).json({
         error: 'Not found',
         message: 'The requested resource was not found'
     });
 });
 
+// Debug endpoint to view logs (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    app.get('/api/debug/logs', (req, res) => {
+        res.json({
+            message: 'Logs are available in the server console',
+            environment: process.env.NODE_ENV,
+            timestamp: new Date().toISOString(),
+            note: 'Check Vercel logs or server console for detailed logging'
+        });
+    });
+}
+
 // Cleanup function to remove old files
 const cleanupOldFiles = async () => {
     try {
+        logger.info(`Starting cleanup of old files`);
         const dirs = ['uploads', 'converted', 'temp'];
         const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        let cleanedCount = 0;
 
         for (const dir of dirs) {
             const dirPath = path.join(__dirname, dir);
@@ -565,38 +709,55 @@ const cleanupOldFiles = async () => {
                         const stats = await fs.stat(filePath);
                         if (now - stats.mtime.getTime() > maxAge) {
                             await fs.unlink(filePath);
-                            console.log(`Cleaned up old file: ${filePath}`);
+                            cleanedCount++;
+                            logger.debug(`Cleaned up old file: ${filePath}`);
                         }
                     } catch (error) {
-                        console.error(`Error processing file ${filePath}:`, error);
+                        logger.error(`Error processing file ${filePath}`, error);
                     }
                 }
             } catch (error) {
-                console.error(`Error reading directory ${dirPath}:`, error);
+                logger.error(`Error reading directory ${dirPath}`, error);
             }
         }
+
+        logger.info(`Cleanup completed`, { 
+            cleanedFiles: cleanedCount,
+            directories: dirs 
+        });
     } catch (error) {
-        console.error('Cleanup error:', error);
+        logger.error('Cleanup error', error);
     }
 };
 
 // Start server
 const startServer = async () => {
     try {
+        logger.info(`Starting File Converter Server`, {
+            port: PORT,
+            environment: process.env.NODE_ENV || 'development',
+            nodeVersion: process.version,
+            platform: process.platform
+        });
+
         await createDirectories();
+        logger.info(`Directories created successfully`);
         
         app.listen(PORT, () => {
-            console.log(`🚀 File Converter Server running on port ${PORT}`);
-            console.log(`📁 Upload directory: ${path.join(__dirname, 'uploads')}`);
-            console.log(`📁 Converted directory: ${path.join(__dirname, 'converted')}`);
-            console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+            logger.info(`🚀 File Converter Server running successfully`, {
+                port: PORT,
+                uploadDir: path.join(__dirname, 'uploads'),
+                convertedDir: path.join(__dirname, 'converted'),
+                environment: process.env.NODE_ENV || 'development'
+            });
         });
 
         // Schedule cleanup every hour
         setInterval(cleanupOldFiles, 60 * 60 * 1000);
+        logger.info(`Scheduled cleanup task (every hour)`);
 
     } catch (error) {
-        console.error('Failed to start server:', error);
+        logger.error(`Failed to start server`, error);
         process.exit(1);
     }
 };
