@@ -1,13 +1,14 @@
 # BlanConverter - Free Online File Conversion Tool
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js CI](https://github.com/blancodagoat/blanconverter/workflows/CI/badge.svg)](https://github.com/blancodagoat/blanconverter/actions)
-[![Deploy](https://github.com/blancodagoat/blanconverter/workflows/Deploy/badge.svg)](https://github.com/blancodagoat/blanconverter/actions)
+[![Deploy](https://github.com/blancodagoat/blanconverter/workflows/Deploy%20to%20GitHub%20Pages/badge.svg)](https://github.com/blancodagoat/blanconverter/actions)
 [![GitHub stars](https://img.shields.io/github/stars/blancodagoat/blanconverter.svg)](https://github.com/blancodagoat/blanconverter/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/blancodagoat/blanconverter.svg)](https://github.com/blancodagoat/blanconverter/network)
 [![GitHub issues](https://img.shields.io/github/issues/blancodagoat/blanconverter.svg)](https://github.com/blancodagoat/blanconverter/issues)
 
 A modern, free-to-use file conversion website that supports 50+ file formats including documents, images, archives, fonts, CAD/3D files, and more.
+
+**🌐 Live Demo**: [https://blancodagoat.github.io/blanconverter](https://blancodagoat.github.io/blanconverter)
 
 ## 🌟 Features
 
@@ -152,8 +153,10 @@ blanconverter/
 
 ## 🚀 Deployment
 
-### GitHub Pages (Static Version)
-The project is configured for automatic deployment to GitHub Pages via GitHub Actions.
+### GitHub Pages (Recommended)
+The project is configured for automatic deployment to GitHub Pages via GitHub Actions. Simply push to the main branch and it will automatically deploy.
+
+**Live URL**: https://blancodagoat.github.io/blanconverter
 
 ### Vercel/Netlify
 The project is ready for deployment on Vercel or Netlify with zero configuration.
@@ -171,11 +174,10 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`npm test`)
-6. Commit your changes (`git commit -m 'Add some amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+4. Ensure the build passes (`npm run build`)
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## 🐛 Known Issues
 
