@@ -129,15 +129,15 @@ class FileConverter {
     }
 
     /**
-     * Handle file selection from input or drag & drop
+     * Handle file selection
      */
     handleFileSelection(files) {
-        const validFiles = Array.from(files).filter(file => {
-            return this.isValidFile(file);
-        });
+        if (!files || files.length === 0) return;
 
+        const validFiles = Array.from(files).filter(file => this.isValidFile(file));
+        
         if (validFiles.length === 0) {
-            this.showNotification('No valid files selected', 'error');
+            this.showNotification('No valid files selected', 'warning');
             return;
         }
 
@@ -147,6 +147,12 @@ class FileConverter {
 
         this.updateFileList();
         this.showNotification(`${validFiles.length} file(s) added successfully`, 'success');
+        
+        // Track file upload
+        this.trackEvent('file_upload', {
+            fileCount: validFiles.length,
+            fileTypes: validFiles.map(f => f.type)
+        });
     }
 
     /**
@@ -635,6 +641,7 @@ class FileConverter {
         this.updateFileList();
         this.hideProgressSection();
         this.hideResultsSection();
+        this.trackEvent('clear_all_files');
     }
 
     /**
@@ -655,6 +662,12 @@ class FileConverter {
         this.conversions = []; // Reset conversions array
         this.showProgressSection();
         this.hideResultsSection();
+
+        // Track conversion start
+        this.trackEvent('conversion_start', {
+            fileCount: this.files.length,
+            fileTypes: this.files.map(f => f.type)
+        });
 
         // Initialize progress for each file
         this.files.forEach(file => {
@@ -681,10 +694,26 @@ class FileConverter {
 
             this.showResultsSection();
             this.showNotification('All files converted successfully!', 'success');
+            
+            // Track successful conversion
+            this.trackEvent('conversion_success', {
+                fileCount: this.conversions.length,
+                conversions: this.conversions.map(c => ({
+                    from: c.originalFile.type,
+                    to: c.convertedFile.type
+                }))
+            });
+            
             showSupportAfterConversion(); // Show support modal after successful conversion
         } catch (error) {
             console.error('Conversion error:', error);
             this.showNotification('Some files failed to convert', 'error');
+            
+            // Track conversion error
+            this.trackEvent('conversion_error', {
+                error: error.message,
+                fileCount: this.files.length
+            });
         } finally {
             this.isConverting = false;
             this.hideProgressSection();
@@ -750,11 +779,13 @@ class FileConverter {
             
             // Add a small delay to show progress
             await this.delay(500);
+            this.trackEvent('file_conversion_success', { file_name: fileInfo.name, target_format: fileInfo.targetFormat });
 
         } catch (error) {
             fileInfo.status = 'error';
             fileInfo.error = error.message;
             this.updateProgressDisplay();
+            this.trackEvent('file_conversion_error', { file_name: fileInfo.name, target_format: fileInfo.targetFormat, error: error.message });
             throw error;
         }
     }
@@ -933,6 +964,7 @@ class FileConverter {
         document.body.removeChild(link);
 
         this.showNotification(`Downloading ${fileInfo.convertedFile.name}`, 'success');
+        this.trackEvent('file_download', { file_name: fileInfo.convertedFile.name });
     }
 
     /**
@@ -1275,6 +1307,15 @@ class FileConverter {
             this.conversions.forEach(conversion => {
                 this.downloadFile(conversion);
             });
+        }
+    }
+
+    /**
+     * Track analytics event
+     */
+    trackEvent(eventName, properties = {}) {
+        if (window.va) {
+            window.va('event', eventName, properties);
         }
     }
 }
