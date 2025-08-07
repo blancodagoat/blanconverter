@@ -3,10 +3,13 @@
  * Handles video file conversions using FFmpeg
  */
 
-// FFmpeg removed due to compatibility issues
-// Will be implemented with alternative libraries if needed
 const path = require('path');
 const fs = require('fs').promises;
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+
+// Set FFmpeg path
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 class VideoConverter {
     constructor() {
@@ -87,73 +90,60 @@ class VideoConverter {
                 videoCodec = 'libx264'
             } = options;
 
-            // FFmpeg conversion temporarily disabled
-        throw new Error('Video conversion is currently not supported.');
+            let command = ffmpeg(inputPath);
 
-            // Apply format-specific settings
+            // Apply video codec settings
             switch (targetFormat.toLowerCase()) {
                 case 'mp4':
                     command = command
                         .videoCodec(videoCodec)
-                        .audioCodec(audioCodec)
-                        .videoBitrate(bitrate)
-                        .audioBitrate(audioBitrate)
-                        .fps(fps);
+                        .audioCodec(audioCodec);
                     break;
 
                 case 'avi':
                     command = command
-                        .videoCodec('libxvid')
-                        .audioCodec('mp3')
-                        .videoBitrate(bitrate)
-                        .audioBitrate(audioBitrate)
-                        .fps(fps);
+                        .videoCodec('libx264')
+                        .audioCodec('mp3');
                     break;
 
                 case 'mov':
                     command = command
-                        .videoCodec('libx264')
-                        .audioCodec('aac')
-                        .videoBitrate(bitrate)
-                        .audioBitrate(audioBitrate)
-                        .fps(fps);
+                        .videoCodec(videoCodec)
+                        .audioCodec(audioCodec);
                     break;
 
                 case 'mkv':
                     command = command
-                        .videoCodec('libx264')
-                        .audioCodec('aac')
-                        .videoBitrate(bitrate)
-                        .audioBitrate(audioBitrate)
-                        .fps(fps);
+                        .videoCodec(videoCodec)
+                        .audioCodec(audioCodec);
                     break;
 
                 case 'webm':
                     command = command
                         .videoCodec('libvpx-vp9')
-                        .audioCodec('libvorbis')
-                        .videoBitrate(bitrate)
-                        .audioBitrate(audioBitrate)
-                        .fps(fps);
+                        .audioCodec('libvorbis');
                     break;
 
                 default:
-                    reject(new Error(`Unsupported format: ${targetFormat}`));
+                    reject(new Error(`Unsupported target format: ${targetFormat}`));
                     return;
-            }
-
-            // Apply resolution settings
-            if (width && height) {
-                command = command.size(`${width}x${height}`);
             }
 
             // Apply quality settings
             if (quality === 'high') {
-                command = command.videoQuality(0);
+                command = command.videoBitrate(bitrate).audioBitrate(audioBitrate);
             } else if (quality === 'medium') {
-                command = command.videoQuality(5);
+                command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.7) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.7) + 'k');
             } else if (quality === 'low') {
-                command = command.videoQuality(10);
+                command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.5) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.5) + 'k');
+            }
+
+            // Apply frame rate
+            command = command.fps(fps);
+
+            // Apply resolution if specified
+            if (width && height) {
+                command = command.size(`${width}x${height}`);
             }
 
             command
@@ -179,8 +169,7 @@ class VideoConverter {
      */
     getMetadata(filePath) {
         return new Promise((resolve, reject) => {
-            // FFmpeg metadata extraction temporarily disabled
-        throw new Error('Video metadata extraction is currently not supported.');
+            ffmpeg.ffprobe(filePath, (error, metadata) => {
                 if (error) {
                     reject(error);
                     return;

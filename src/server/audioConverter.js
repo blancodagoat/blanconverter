@@ -3,10 +3,13 @@
  * Handles audio file conversions using FFmpeg
  */
 
-// FFmpeg removed due to compatibility issues
-// Will be implemented with alternative libraries if needed
 const path = require('path');
 const fs = require('fs').promises;
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+
+// Set FFmpeg path
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 class AudioConverter {
     constructor() {
@@ -77,8 +80,7 @@ class AudioConverter {
                 quality = 'high'
             } = options;
 
-            // FFmpeg conversion temporarily disabled
-        throw new Error('Audio conversion is currently not supported.');
+            let command = ffmpeg(inputPath);
 
             // Apply format-specific settings
             switch (targetFormat.toLowerCase()) {
@@ -166,8 +168,7 @@ class AudioConverter {
      */
     getMetadata(filePath) {
         return new Promise((resolve, reject) => {
-            // FFmpeg metadata extraction temporarily disabled
-        throw new Error('Audio metadata extraction is currently not supported.');
+            ffmpeg.ffprobe(filePath, (error, metadata) => {
                 if (error) {
                     reject(error);
                     return;

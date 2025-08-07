@@ -6,8 +6,6 @@
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
-// HEIC conversion and Canvas functionality removed due to compatibility issues
-// Will be implemented with alternative libraries if needed
 const svg2pdf = require('svg2pdf.js');
 
 class ImageConverter {
@@ -92,24 +90,19 @@ class ImageConverter {
      */
     async convertFromHeic(inputPath, targetFormat) {
         try {
-            // Read HEIC file
-            const inputBuffer = await fs.readFile(inputPath);
-            
-                    // HEIC conversion temporarily disabled
-        throw new Error('HEIC conversion is currently not supported. Please convert to JPEG first.');
-
-            // Generate output filename
+            // For HEIC conversion, we'll use Sharp's built-in support
+            // Sharp has limited HEIC support, so we'll try to convert to JPEG first
             const outputFilename = this.generateOutputFilename(inputPath, targetFormat);
             const outputPath = path.join(__dirname, '../../converted', outputFilename);
 
-            // If target is JPEG, save directly
-            if (targetFormat.toLowerCase() === 'jpg' || targetFormat.toLowerCase() === 'jpeg') {
-                await fs.writeFile(outputPath, jpegBuffer);
-            } else {
-                // Convert to other formats using Sharp
-                let convertedImage = sharp(jpegBuffer);
-                convertedImage = this.applyFormatProcessing(convertedImage, targetFormat);
-                await convertedImage.toFile(outputPath);
+            // Try to convert using Sharp
+            try {
+                const convertedImage = sharp(inputPath);
+                const processedImage = this.applyFormatProcessing(convertedImage, targetFormat);
+                await processedImage.toFile(outputPath);
+            } catch (sharpError) {
+                // If Sharp fails, provide helpful error message
+                throw new Error(`HEIC conversion failed. Please convert your HEIC file to JPEG first using your device's built-in tools, then upload the JPEG file.`);
             }
 
             // Get output file info
@@ -138,21 +131,19 @@ class ImageConverter {
      */
     async convertFromRaw(inputPath, targetFormat) {
         try {
-            // Generate output filename
+            // Sharp has built-in RAW support for many formats
             const outputFilename = this.generateOutputFilename(inputPath, targetFormat);
             const outputPath = path.join(__dirname, '../../converted', outputFilename);
 
-            // Sharp can handle most RAW formats directly
-            let convertedImage = sharp(inputPath, {
-                failOnError: false,
-                limitInputPixels: false
-            });
-
-            // Apply format-specific processing
-            convertedImage = this.applyFormatProcessing(convertedImage, targetFormat);
-
-            // Save converted image
-            await convertedImage.toFile(outputPath);
+            // Try to convert using Sharp's RAW support
+            try {
+                const convertedImage = sharp(inputPath);
+                const processedImage = this.applyFormatProcessing(convertedImage, targetFormat);
+                await processedImage.toFile(outputPath);
+            } catch (sharpError) {
+                // If Sharp fails, provide helpful error message
+                throw new Error(`RAW conversion failed. This RAW format may not be supported. Please convert to JPEG first using your camera's software or other tools.`);
+            }
 
             // Get output file info
             const outputStats = await fs.stat(outputPath);
