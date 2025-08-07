@@ -74,7 +74,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "https://use.fontawesome.com"],
-            scriptSrc: ["'self'", "https://cdnjs.buymeacoffee.com"],
+            scriptSrc: ["'self'", "https://cdnjs.buymeacoffee.com", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://use.fontawesome.com"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https://va.vercel-scripts.com"],
@@ -190,18 +190,29 @@ const upload = multer({
 });
 
 // Initialize converters
-const imageConverter = new ImageConverter();
-const documentConverter = new DocumentConverter();
-const audioConverter = new AudioConverter();
-const videoConverter = new VideoConverter();
-const ebookConverter = new EbookConverter();
-const archiveConverter = new ArchiveConverter();
-const fontConverter = new FontConverter();
-const cadConverter = new CadConverter();
-const vectorConverter = new VectorConverter();
-const dataConverter = new DataConverter();
-const diskImageConverter = new DiskImageConverter();
-const specializedConverter = new SpecializedConverter();
+let imageConverter, documentConverter, audioConverter, videoConverter, ebookConverter, 
+    archiveConverter, fontConverter, cadConverter, vectorConverter, dataConverter, 
+    diskImageConverter, specializedConverter;
+
+try {
+    imageConverter = new ImageConverter();
+    documentConverter = new DocumentConverter();
+    audioConverter = new AudioConverter();
+    videoConverter = new VideoConverter();
+    ebookConverter = new EbookConverter();
+    archiveConverter = new ArchiveConverter();
+    fontConverter = new FontConverter();
+    cadConverter = new CadConverter();
+    vectorConverter = new VectorConverter();
+    dataConverter = new DataConverter();
+    diskImageConverter = new DiskImageConverter();
+    specializedConverter = new SpecializedConverter();
+    
+    logger.info('All converters initialized successfully');
+} catch (error) {
+    logger.error('Failed to initialize converters', error);
+    throw error;
+}
 
 // Routes
 
@@ -213,7 +224,21 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: '1.0.0'
+        version: '1.0.0',
+        converters: {
+            image: !!imageConverter,
+            document: !!documentConverter,
+            audio: !!audioConverter,
+            video: !!videoConverter,
+            ebook: !!ebookConverter,
+            archive: !!archiveConverter,
+            font: !!fontConverter,
+            cad: !!cadConverter,
+            vector: !!vectorConverter,
+            data: !!dataConverter,
+            diskImage: !!diskImageConverter,
+            specialized: !!specializedConverter
+        }
     });
 });
 
@@ -354,23 +379,45 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
 
         // Handle video to audio extraction
         let result;
-        if (fileType === 'video' && ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(targetFormat.toLowerCase())) {
-            logger.info(`Extracting audio from video`, {
+        try {
+            if (fileType === 'video' && ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(targetFormat.toLowerCase())) {
+                logger.info(`Extracting audio from video`, {
+                    requestId,
+                    fileName: file.originalname,
+                    targetFormat: targetFormat
+                });
+                // Extract audio from video
+                result = await AudioConverter.extractFromVideo(file.path, targetFormat);
+            } else {
+                logger.info(`Starting regular conversion`, {
+                    requestId,
+                    fileName: file.originalname,
+                    fromType: fileType,
+                    toFormat: targetFormat
+                });
+                // Regular conversion
+                result = await converter.convert(file.path, targetFormat, options);
+            }
+        } catch (conversionError) {
+            logger.error(`Conversion failed`, conversionError, {
                 requestId,
                 fileName: file.originalname,
-                targetFormat: targetFormat
+                fileType,
+                targetFormat,
+                options
             });
-            // Extract audio from video
-            result = await AudioConverter.extractFromVideo(file.path, targetFormat);
-        } else {
-            logger.info(`Starting regular conversion`, {
-                requestId,
-                fileName: file.originalname,
-                fromType: fileType,
-                toFormat: targetFormat
+            
+            // Clean up uploaded file on error
+            try {
+                await fs.unlink(file.path);
+            } catch (cleanupError) {
+                logger.warn(`Failed to cleanup uploaded file`, { requestId, filePath: file.path, error: cleanupError.message });
+            }
+            
+            return res.status(500).json({
+                error: 'Conversion failed',
+                message: conversionError.message || 'An error occurred during conversion'
             });
-            // Regular conversion
-            result = await converter.convert(file.path, targetFormat, options);
         }
 
         const processingTime = Date.now() - startTime;
@@ -686,18 +733,18 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Global error handler
-app.use((error, req, res, next) => {
-    logger.error('Unhandled error in request', error, {
-        url: req.url,
+// Global error handler middleware
+app.use((err, req, res, next) => {
+    logger.error(`Unhandled server error`, err, {
+        path: req.path,
         method: req.method,
         ip: req.ip,
-        userAgent: req.get('User-Agent')
+        body: req.body
     });
     
     res.status(500).json({
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : error.message
+        error: 'Internal Server Error',
+        message: err.message || 'Something went wrong on the server.'
     });
 });
 
