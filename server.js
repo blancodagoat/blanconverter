@@ -118,7 +118,19 @@ app.get('/', (req, res) => {
 });
 
 // Static file serving
-app.use(express.static('public'));
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
+// Specific route for JSZip to ensure correct MIME type
+app.get('/js/jszip.min.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'public', 'js', 'jszip.min.js'));
+});
 
 // Create necessary directories
 const createDirectories = async () => {
@@ -305,86 +317,70 @@ app.get('/api/formats', (req, res) => {
  */
 app.post('/api/convert', upload.single('file'), async (req, res) => {
     const startTime = Date.now();
-    const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     
-    try {
-        logger.info(`Starting conversion request`, { 
-            requestId, 
-            ip: req.ip, 
-            userAgent: req.get('User-Agent'),
-            timestamp: new Date().toISOString()
-        });
+    logger.info(`Conversion request received`, {
+        requestId,
+        fileName: req.file?.originalname,
+        targetFormat: req.body?.targetFormat,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+    });
 
+    try {
         if (!req.file) {
-            logger.warn(`No file uploaded`, { requestId, ip: req.ip });
-            return res.status(400).json({
-                error: 'No file uploaded'
-            });
+            logger.error(`No file uploaded`, { requestId });
+            return res.status(400).json({ error: 'No file uploaded' });
         }
 
         const { targetFormat, quality, gifFps, gifScale } = req.body;
+        
         if (!targetFormat) {
-            logger.warn(`Target format not specified`, { 
-                requestId, 
-                ip: req.ip, 
-                fileName: req.file.originalname 
-            });
-            return res.status(400).json({
-                error: 'Target format not specified'
-            });
+            logger.error(`No target format specified`, { requestId, fileName: req.file.originalname });
+            return res.status(400).json({ error: 'Target format is required' });
         }
 
         const file = req.file;
         const fileType = getFileCategory(file.mimetype);
+        
+        logger.info(`Processing file`, {
+            requestId,
+            fileName: file.originalname,
+            fileType,
+            targetFormat,
+            fileSize: file.size
+        });
+
+        // Get appropriate converter
         const converter = getConverter(fileType);
+        if (!converter) {
+            logger.error(`No converter found for file type`, { requestId, fileType, fileName: file.originalname });
+            return res.status(400).json({ error: `Unsupported file type: ${fileType}` });
+        }
 
         // Prepare conversion options
         const options = {};
-        if (quality) {
-            options.quality = quality;
-        }
-        
-        // Add GIF-specific options for video to GIF conversion
+        if (quality) { options.quality = quality; }
         if (targetFormat.toLowerCase() === 'gif' && fileType === 'video') {
-            if (gifFps) {
-                options.gifFps = parseInt(gifFps);
-            }
-            if (gifScale) {
-                options.gifScale = parseInt(gifScale);
-            }
+            if (gifFps) { options.gifFps = parseInt(gifFps); }
+            if (gifScale) { options.gifScale = parseInt(gifScale); }
         }
 
-        logger.info(`File analysis complete`, {
+        logger.info(`Starting conversion`, {
             requestId,
             fileName: file.originalname,
-            fileSize: file.size,
-            mimeType: file.mimetype,
-            detectedType: fileType,
-            targetFormat: targetFormat,
-            options: options,
-            hasConverter: !!converter
+            converter: converter.constructor.name,
+            options
         });
 
-        if (!converter) {
-            logger.warn(`Unsupported file type`, {
-                requestId,
-                fileName: file.originalname,
-                mimeType: file.mimetype,
-                detectedType: fileType
-            });
-            return res.status(400).json({
-                error: 'Unsupported file type'
-            });
-        }
-
-        // Handle video to audio extraction
         let result;
         try {
-            if (fileType === 'video' && ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(targetFormat.toLowerCase())) {
+            // Check if this is an audio extraction from video
+            if (fileType === 'video' && targetFormat.match(/^(mp3|wav|flac|aac|ogg)$/i)) {
                 logger.info(`Extracting audio from video`, {
                     requestId,
                     fileName: file.originalname,
-                    targetFormat: targetFormat
+                    targetFormat
                 });
                 // Extract audio from video
                 result = await AudioConverter.extractFromVideo(file.path, targetFormat);
@@ -404,7 +400,8 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
                 fileName: file.originalname,
                 fileType,
                 targetFormat,
-                options
+                options,
+                errorStack: conversionError.stack
             });
             
             // Clean up uploaded file on error
