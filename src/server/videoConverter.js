@@ -15,7 +15,7 @@ class VideoConverter {
     constructor() {
         this.supportedFormats = {
             input: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv', '3gp'],
-            output: ['mp4', 'avi', 'mov', 'mkv', 'webm']
+            output: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif']
         };
     }
 
@@ -87,7 +87,10 @@ class VideoConverter {
                 audioBitrate = '128k',
                 quality = 'high',
                 audioCodec = 'aac',
-                videoCodec = 'libx264'
+                videoCodec = 'libx264',
+                gifFps = 10,
+                gifScale = 320,
+                gifColors = 256
             } = options;
 
             let command = ffmpeg(inputPath);
@@ -124,25 +127,40 @@ class VideoConverter {
                         .audioCodec('libvorbis');
                     break;
 
+                case 'gif':
+                    // GIF conversion - remove audio and optimize for GIF
+                    command = command
+                        .noAudio()
+                        .fps(gifFps)
+                        .size(`${gifScale}:-1`)
+                        .videoFilters([
+                            `fps=${gifFps}`,
+                            `scale=${gifScale}:-1:flags=lanczos`,
+                            `split[s0][s1];[s0]palettegen=max_colors=${gifColors}[p];[s1][p]paletteuse`
+                        ]);
+                    break;
+
                 default:
                     reject(new Error(`Unsupported target format: ${targetFormat}`));
                     return;
             }
 
-            // Apply quality settings
-            if (quality === 'high') {
-                command = command.videoBitrate(bitrate).audioBitrate(audioBitrate);
-            } else if (quality === 'medium') {
-                command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.7) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.7) + 'k');
-            } else if (quality === 'low') {
-                command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.5) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.5) + 'k');
+            // Apply quality settings (skip for GIF)
+            if (targetFormat.toLowerCase() !== 'gif') {
+                if (quality === 'high') {
+                    command = command.videoBitrate(bitrate).audioBitrate(audioBitrate);
+                } else if (quality === 'medium') {
+                    command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.7) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.7) + 'k');
+                } else if (quality === 'low') {
+                    command = command.videoBitrate(Math.floor(parseInt(bitrate) * 0.5) + 'k').audioBitrate(Math.floor(parseInt(audioBitrate) * 0.5) + 'k');
+                }
+
+                // Apply frame rate (skip for GIF as it's handled above)
+                command = command.fps(fps);
             }
 
-            // Apply frame rate
-            command = command.fps(fps);
-
-            // Apply resolution if specified
-            if (width && height) {
+            // Apply resolution if specified (skip for GIF as it's handled above)
+            if (width && height && targetFormat.toLowerCase() !== 'gif') {
                 command = command.size(`${width}x${height}`);
             }
 
@@ -543,7 +561,8 @@ class VideoConverter {
             'webm': 'video/webm',
             'flv': 'video/x-flv',
             'wmv': 'video/x-ms-wmv',
-            '3gp': 'video/3gpp'
+            '3gp': 'video/3gpp',
+            'gif': 'image/gif' // Added GIF MIME type
         };
 
         return mimeTypes[format.toLowerCase()] || 'video/mp4';

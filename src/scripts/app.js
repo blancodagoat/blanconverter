@@ -290,7 +290,7 @@ class FileConverter {
             'video/avi': 'mp4',
             'video/quicktime': 'mp4',
             'video/x-matroska': 'mp4',
-            'video/webm': 'mp4',
+            'video/webm': 'gif',
             'video/x-flv': 'mp4',
             'video/x-ms-wmv': 'mp4',
             'video/3gpp': 'mp4'
@@ -385,14 +385,14 @@ class FileConverter {
             'audio/x-ms-wma': ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
             'audio/aiff': ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
             // Video
-            'video/mp4': ['avi', 'mov', 'mkv', 'webm', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/avi': ['mp4', 'mov', 'mkv', 'webm', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/quicktime': ['mp4', 'avi', 'mkv', 'webm', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/x-matroska': ['mp4', 'avi', 'mov', 'webm', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/webm': ['mp4', 'avi', 'mov', 'mkv', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/x-flv': ['mp4', 'avi', 'mov', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/x-ms-wmv': ['mp4', 'avi', 'mov', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
-            'video/3gpp': ['mp4', 'avi', 'mov', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a']
+            'video/mp4': ['avi', 'mov', 'mkv', 'webm', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/avi': ['mp4', 'mov', 'mkv', 'webm', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/quicktime': ['mp4', 'avi', 'mkv', 'webm', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/x-matroska': ['mp4', 'avi', 'mov', 'webm', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/webm': ['mp4', 'avi', 'mov', 'mkv', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/x-flv': ['mp4', 'avi', 'mov', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/x-ms-wmv': ['mp4', 'avi', 'mov', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'],
+            'video/3gpp': ['mp4', 'avi', 'mov', 'gif', 'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a']
         };
 
         return formatMap[fileType] || ['pdf'];
@@ -429,6 +429,49 @@ class FileConverter {
             `<option value="${format}" ${format === fileInfo.targetFormat ? 'selected' : ''}>${format.toUpperCase()}</option>`
         ).join('');
 
+        // Add quality options for video and image conversions
+        const isVideo = fileInfo.type.startsWith('video/');
+        const isImage = fileInfo.type.startsWith('image/');
+        const isAudio = fileInfo.type.startsWith('audio/');
+        
+        let qualityOptions = '';
+        if (isVideo || isImage || isAudio) {
+            qualityOptions = `
+                <div class="file-quality-options">
+                    <label>Quality:</label>
+                    <select class="file-quality-select" data-file-id="${fileInfo.id}">
+                        <option value="high" ${(fileInfo.quality || 'high') === 'high' ? 'selected' : ''}>High</option>
+                        <option value="medium" ${(fileInfo.quality || 'high') === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="low" ${(fileInfo.quality || 'high') === 'low' ? 'selected' : ''}>Low</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        // Add GIF-specific options for video to GIF conversion
+        let gifOptions = '';
+        if (isVideo && fileInfo.targetFormat === 'gif') {
+            gifOptions = `
+                <div class="file-gif-options">
+                    <label>FPS:</label>
+                    <select class="file-gif-fps-select" data-file-id="${fileInfo.id}">
+                        <option value="5" ${(fileInfo.gifFps || 10) === 5 ? 'selected' : ''}>5 FPS</option>
+                        <option value="10" ${(fileInfo.gifFps || 10) === 10 ? 'selected' : ''}>10 FPS</option>
+                        <option value="15" ${(fileInfo.gifFps || 10) === 15 ? 'selected' : ''}>15 FPS</option>
+                        <option value="20" ${(fileInfo.gifFps || 10) === 20 ? 'selected' : ''}>20 FPS</option>
+                        <option value="30" ${(fileInfo.gifFps || 10) === 30 ? 'selected' : ''}>30 FPS</option>
+                    </select>
+                    <label>Scale:</label>
+                    <select class="file-gif-scale-select" data-file-id="${fileInfo.id}">
+                        <option value="240" ${(fileInfo.gifScale || 320) === 240 ? 'selected' : ''}>240px</option>
+                        <option value="320" ${(fileInfo.gifScale || 320) === 320 ? 'selected' : ''}>320px</option>
+                        <option value="480" ${(fileInfo.gifScale || 320) === 480 ? 'selected' : ''}>480px</option>
+                        <option value="640" ${(fileInfo.gifScale || 320) === 640 ? 'selected' : ''}>640px</option>
+                    </select>
+                </div>
+            `;
+        }
+
         fileElement.innerHTML = `
             <div class="file-icon">
                 <i class="${this.getFileIcon(fileInfo.type)}"></i>
@@ -437,9 +480,13 @@ class FileConverter {
                 <div class="file-name">${fileInfo.name}</div>
                 <div class="file-size">${this.formatFileSize(fileInfo.size)}</div>
             </div>
-            <select class="file-format-select" data-file-id="${fileInfo.id}">
-                ${formatOptions}
-            </select>
+            <div class="file-controls">
+                <select class="file-format-select" data-file-id="${fileInfo.id}">
+                    ${formatOptions}
+                </select>
+                ${qualityOptions}
+                ${gifOptions}
+            </div>
             <button class="file-remove" data-file-id="${fileInfo.id}">
                 <i class="fas fa-times"></i>
             </button>
@@ -449,7 +496,30 @@ class FileConverter {
         const formatSelect = fileElement.querySelector('.file-format-select');
         formatSelect.addEventListener('change', (e) => {
             this.updateFileTargetFormat(fileInfo.id, e.target.value);
+            // Re-render to show/hide GIF options
+            this.updateFileList();
         });
+
+        const qualitySelect = fileElement.querySelector('.file-quality-select');
+        if (qualitySelect) {
+            qualitySelect.addEventListener('change', (e) => {
+                this.updateFileQuality(fileInfo.id, e.target.value);
+            });
+        }
+
+        const gifFpsSelect = fileElement.querySelector('.file-gif-fps-select');
+        if (gifFpsSelect) {
+            gifFpsSelect.addEventListener('change', (e) => {
+                this.updateFileGifFps(fileInfo.id, parseInt(e.target.value));
+            });
+        }
+
+        const gifScaleSelect = fileElement.querySelector('.file-gif-scale-select');
+        if (gifScaleSelect) {
+            gifScaleSelect.addEventListener('change', (e) => {
+                this.updateFileGifScale(fileInfo.id, parseInt(e.target.value));
+            });
+        }
 
         const removeBtn = fileElement.querySelector('.file-remove');
         removeBtn.addEventListener('click', () => {
@@ -492,6 +562,36 @@ class FileConverter {
         const file = this.files.find(f => f.id === fileId);
         if (file) {
             file.targetFormat = targetFormat;
+        }
+    }
+
+    /**
+     * Update quality for a file
+     */
+    updateFileQuality(fileId, quality) {
+        const file = this.files.find(f => f.id === fileId);
+        if (file) {
+            file.quality = quality;
+        }
+    }
+
+    /**
+     * Update GIF FPS for a file
+     */
+    updateFileGifFps(fileId, fps) {
+        const file = this.files.find(f => f.id === fileId);
+        if (file) {
+            file.gifFps = fps;
+        }
+    }
+
+    /**
+     * Update GIF Scale for a file
+     */
+    updateFileGifScale(fileId, scale) {
+        const file = this.files.find(f => f.id === fileId);
+        if (file) {
+            file.gifScale = scale;
         }
     }
 
@@ -565,6 +665,21 @@ class FileConverter {
         const formData = new FormData();
         formData.append('file', fileInfo.file);
         formData.append('targetFormat', fileInfo.targetFormat);
+
+        // Add quality options for video, image, and audio conversions
+        if (fileInfo.quality) {
+            formData.append('quality', fileInfo.quality);
+        }
+
+        // Add GIF-specific options for video to GIF conversion
+        if (fileInfo.targetFormat === 'gif' && fileInfo.type.startsWith('video/')) {
+            if (fileInfo.gifFps) {
+                formData.append('gifFps', fileInfo.gifFps);
+            }
+            if (fileInfo.gifScale) {
+                formData.append('gifScale', fileInfo.gifScale);
+            }
+        }
 
         try {
             // Simulate conversion progress

@@ -268,7 +268,7 @@ app.get('/api/formats', (req, res) => {
             },
             video: {
                 input: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv', '3gp'],
-                output: ['mp4', 'avi', 'mov', 'mkv', 'webm']
+                output: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif']
             }
         };
 
@@ -297,7 +297,7 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
             });
         }
 
-        const { targetFormat } = req.body;
+        const { targetFormat, quality, gifFps, gifScale } = req.body;
         if (!targetFormat) {
             logger.warn(`Target format not specified`, { 
                 requestId, 
@@ -313,6 +313,22 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
         const fileType = getFileCategory(file.mimetype);
         const converter = getConverter(fileType);
 
+        // Prepare conversion options
+        const options = {};
+        if (quality) {
+            options.quality = quality;
+        }
+        
+        // Add GIF-specific options for video to GIF conversion
+        if (targetFormat.toLowerCase() === 'gif' && fileType === 'video') {
+            if (gifFps) {
+                options.gifFps = parseInt(gifFps);
+            }
+            if (gifScale) {
+                options.gifScale = parseInt(gifScale);
+            }
+        }
+
         logger.info(`File analysis complete`, {
             requestId,
             fileName: file.originalname,
@@ -320,6 +336,7 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
             mimeType: file.mimetype,
             detectedType: fileType,
             targetFormat: targetFormat,
+            options: options,
             hasConverter: !!converter
         });
 
@@ -353,7 +370,7 @@ app.post('/api/convert', upload.single('file'), async (req, res) => {
                 toFormat: targetFormat
             });
             // Regular conversion
-            result = await converter.convert(file.path, targetFormat);
+            result = await converter.convert(file.path, targetFormat, options);
         }
 
         const processingTime = Date.now() - startTime;
