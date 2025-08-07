@@ -37,8 +37,6 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <!-- Fallback Icons -->
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css">
 </head>
 <body>
     <!-- Header -->
@@ -124,7 +122,29 @@
 
                     <!-- File List -->
                     <div class="file-list" id="fileList" style="display: none;">
-                        <h3 class="file-list-title">Files to Convert</h3>
+                        <div class="file-list-header">
+                            <h3 class="file-list-title">Files to Convert</h3>
+                            <div class="file-list-actions">
+                                <button class="btn btn-secondary" id="batchSettingsBtn">
+                                    <i class="fas fa-cog"></i>
+                                    Batch Settings
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Batch Settings Panel -->
+                        <div class="batch-settings-panel" id="batchSettingsPanel">
+                            <div class="batch-settings-header">
+                                <h4>Batch Settings</h4>
+                                <button class="batch-settings-close" id="batchSettingsClose">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="batch-options-container">
+                                <!-- Batch options will be populated here -->
+                            </div>
+                        </div>
+                        
                         <div class="file-items" id="fileItems"></div>
                         <div class="file-actions">
                             <button class="btn btn-secondary" id="clearAllBtn">
@@ -151,7 +171,13 @@
             <!-- Results -->
             <section class="results-section" id="resultsSection" style="display: none;">
                 <div class="results-card">
-                    <h3 class="results-title">Conversion Complete</h3>
+                    <div class="results-header">
+                        <h3 class="results-title">Conversion Complete</h3>
+                        <button class="btn btn-secondary" id="downloadAllBtn">
+                            <i class="fas fa-download"></i>
+                            Download All as ZIP
+                        </button>
+                    </div>
                     <div class="results-list" id="resultsList"></div>
                 </div>
             </section>
@@ -531,6 +557,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="/js/app.js"></script>
     
     <!-- Vercel Analytics -->

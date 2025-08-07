@@ -1526,3 +1526,133 @@ body.fa-fallback {
         flex-direction: column;
     }
 } 
+
+// Batch Settings Panel
+.batch-settings-panel {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+    
+    &.show {
+        display: block;
+    }
+}
+
+.batch-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h4 {
+        margin: 0;
+        color: #495057;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .batch-settings-close {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        
+        &:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+    }
+}
+
+.batch-option-group {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+    
+    h4 {
+        margin: 0 0 12px 0;
+        color: #495057;
+        font-size: 14px;
+        font-weight: 600;
+    }
+}
+
+.batch-quality-option,
+.batch-gif-options {
+    margin-bottom: 12px;
+    
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    select {
+        padding: 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 12px;
+        background: white;
+        min-width: 120px;
+        margin-right: 8px;
+        
+        &:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+    }
+}
+
+.batch-apply-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    
+    &:hover {
+        background: #0056b3;
+    }
+}
+
+// File list header
+.file-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    .file-list-title {
+        margin: 0;
+    }
+    
+    .file-list-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+// Results header
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    .results-title {
+        margin: 0;
+    }
+} 

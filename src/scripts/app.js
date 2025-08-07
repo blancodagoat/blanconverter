@@ -29,7 +29,10 @@ class FileConverter {
             progressSection: document.getElementById('progressSection'),
             progressList: document.getElementById('progressList'),
             resultsSection: document.getElementById('resultsSection'),
-            resultsList: document.getElementById('resultsList')
+            resultsList: document.getElementById('resultsList'),
+            batchSettingsBtn: document.getElementById('batchSettingsBtn'),
+            batchSettingsPanel: document.getElementById('batchSettingsPanel'),
+            downloadAllBtn: document.getElementById('downloadAllBtn')
         };
     }
 
@@ -53,6 +56,27 @@ class FileConverter {
 
         this.elements.convertAllBtn.addEventListener('click', () => {
             this.convertAllFiles();
+        });
+
+        // Download all as ZIP
+        if (this.elements.downloadAllBtn) {
+            this.elements.downloadAllBtn.addEventListener('click', () => {
+                this.downloadAllAsZip();
+            });
+        }
+
+        // Batch settings events
+        if (this.elements.batchSettingsBtn) {
+            this.elements.batchSettingsBtn.addEventListener('click', () => {
+                this.toggleBatchSettings();
+            });
+        }
+
+        // Batch settings form events
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.batch-apply-btn')) {
+                this.applyBatchSettings();
+            }
         });
 
         // Navigation events
@@ -628,6 +652,7 @@ class FileConverter {
         }
 
         this.isConverting = true;
+        this.conversions = []; // Reset conversions array
         this.showProgressSection();
         this.hideResultsSection();
 
@@ -644,6 +669,14 @@ class FileConverter {
             for (let i = 0; i < this.files.length; i++) {
                 const file = this.files[i];
                 await this.convertFile(file);
+                
+                // Add successful conversion to conversions array
+                if (file.status === 'completed' && file.convertedFile) {
+                    this.conversions.push({
+                        originalFile: file,
+                        convertedFile: file.convertedFile
+                    });
+                }
             }
 
             this.showResultsSection();
@@ -685,14 +718,29 @@ class FileConverter {
             // Simulate conversion progress
             await this.simulateProgress(fileInfo);
 
-            // In a real implementation, you would send the file to your server
-            // const response = await fetch('/api/convert', {
-            //     method: 'POST',
-            //     body: formData
-            // });
+            // Real API call to server
+            const response = await fetch('/api/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`Conversion failed: ${response.statusText}`);
+            }
+
+            const result = await response.json();
             
-            // For demo purposes, we'll simulate a successful conversion
-            const convertedFile = this.simulateConversion(fileInfo);
+            if (!result.success) {
+                throw new Error(result.error || 'Conversion failed');
+            }
+
+            // Create converted file object
+            const convertedFile = {
+                name: result.convertedFile.filename,
+                size: result.convertedFile.size,
+                url: `/converted/${result.convertedFile.filename}`,
+                type: result.convertedFile.mimeType
+            };
             
             fileInfo.status = 'completed';
             fileInfo.progress = 100;
@@ -1014,6 +1062,220 @@ class FileConverter {
      */
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Toggle batch settings panel
+     */
+    toggleBatchSettings() {
+        const panel = this.elements.batchSettingsPanel;
+        if (panel) {
+            panel.classList.toggle('show');
+            this.updateBatchSettingsOptions();
+        }
+    }
+
+    /**
+     * Update batch settings options based on selected files
+     */
+    updateBatchSettingsOptions() {
+        const panel = this.elements.batchSettingsPanel;
+        if (!panel) return;
+
+        // Group files by type
+        const fileGroups = this.groupFilesByType();
+        
+        // Clear existing options
+        const container = panel.querySelector('.batch-options-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+
+        // Add options for each file type
+        Object.keys(fileGroups).forEach(fileType => {
+            const files = fileGroups[fileType];
+            if (files.length > 1) {
+                this.addBatchOptionForType(container, fileType, files);
+            }
+        });
+    }
+
+    /**
+     * Group files by type
+     */
+    groupFilesByType() {
+        const groups = {};
+        this.files.forEach(file => {
+            const type = this.getFileCategory(file.type);
+            if (!groups[type]) {
+                groups[type] = [];
+            }
+            groups[type].push(file);
+        });
+        return groups;
+    }
+
+    /**
+     * Get file category from MIME type
+     */
+    getFileCategory(mimeType) {
+        if (mimeType.startsWith('image/')) return 'image';
+        if (mimeType.startsWith('video/')) return 'video';
+        if (mimeType.startsWith('audio/')) return 'audio';
+        if (mimeType.includes('pdf') || mimeType.includes('document')) return 'document';
+        return 'other';
+    }
+
+    /**
+     * Add batch option for a specific file type
+     */
+    addBatchOptionForType(container, fileType, files) {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'batch-option-group';
+        
+        const isVideo = fileType === 'video';
+        const isImage = fileType === 'image';
+        const isAudio = fileType === 'audio';
+        
+        let qualityOptions = '';
+        if (isVideo || isImage || isAudio) {
+            qualityOptions = `
+                <div class="batch-quality-option">
+                    <label>Quality for ${files.length} ${fileType} files:</label>
+                    <select class="batch-quality-select" data-file-type="${fileType}">
+                        <option value="">Keep current</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        let gifOptions = '';
+        if (isVideo) {
+            gifOptions = `
+                <div class="batch-gif-options">
+                    <label>GIF Settings (if converting to GIF):</label>
+                    <select class="batch-gif-fps-select" data-file-type="${fileType}">
+                        <option value="">Keep current</option>
+                        <option value="5">5 FPS</option>
+                        <option value="10">10 FPS</option>
+                        <option value="15">15 FPS</option>
+                        <option value="20">20 FPS</option>
+                        <option value="30">30 FPS</option>
+                    </select>
+                    <select class="batch-gif-scale-select" data-file-type="${fileType}">
+                        <option value="">Keep current</option>
+                        <option value="240">240px</option>
+                        <option value="320">320px</option>
+                        <option value="480">480px</option>
+                        <option value="640">640px</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        optionDiv.innerHTML = `
+            <h4>${fileType.charAt(0).toUpperCase() + fileType.slice(1)} Files (${files.length})</h4>
+            ${qualityOptions}
+            ${gifOptions}
+            <button class="batch-apply-btn" data-file-type="${fileType}">
+                Apply to ${files.length} ${fileType} files
+            </button>
+        `;
+
+        container.appendChild(optionDiv);
+    }
+
+    /**
+     * Apply batch settings to files
+     */
+    applyBatchSettings() {
+        const fileType = event.target.dataset.fileType;
+        const qualitySelect = document.querySelector(`.batch-quality-select[data-file-type="${fileType}"]`);
+        const gifFpsSelect = document.querySelector(`.batch-gif-fps-select[data-file-type="${fileType}"]`);
+        const gifScaleSelect = document.querySelector(`.batch-gif-scale-select[data-file-type="${fileType}"]`);
+
+        const quality = qualitySelect ? qualitySelect.value : '';
+        const gifFps = gifFpsSelect ? gifFpsSelect.value : '';
+        const gifScale = gifScaleSelect ? gifScaleSelect.value : '';
+
+        // Apply settings to all files of this type
+        this.files.forEach(file => {
+            if (this.getFileCategory(file.type) === fileType) {
+                if (quality) file.quality = quality;
+                if (gifFps) file.gifFps = parseInt(gifFps);
+                if (gifScale) file.gifScale = parseInt(gifScale);
+            }
+        });
+
+        // Update the file list display
+        this.updateFileList();
+
+        // Show confirmation
+        this.showNotification(`Applied settings to ${this.files.filter(f => this.getFileCategory(f.type) === fileType).length} ${fileType} files`, 'success');
+    }
+
+    /**
+     * Download all converted files as ZIP
+     */
+    async downloadAllAsZip() {
+        if (!this.conversions || this.conversions.length === 0) {
+            this.showNotification('No converted files to download', 'warning');
+            return;
+        }
+
+        try {
+            // Create a ZIP file using JSZip
+            const JSZip = window.JSZip;
+            if (!JSZip) {
+                // Fallback to individual downloads
+                this.conversions.forEach(conversion => {
+                    this.downloadFile(conversion);
+                });
+                return;
+            }
+
+            const zip = new JSZip();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+            // Add each converted file to the ZIP
+            for (const conversion of this.conversions) {
+                if (conversion.convertedFile && conversion.convertedFile.url) {
+                    try {
+                        const response = await fetch(conversion.convertedFile.url);
+                        const blob = await response.blob();
+                        zip.file(conversion.convertedFile.name, blob);
+                    } catch (error) {
+                        console.warn(`Could not add ${conversion.convertedFile.name} to ZIP:`, error);
+                    }
+                }
+            }
+
+            // Generate and download the ZIP
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const zipUrl = URL.createObjectURL(zipBlob);
+            
+            const link = document.createElement('a');
+            link.href = zipUrl;
+            link.download = `converted-files-${timestamp}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(zipUrl);
+            
+            this.showNotification('ZIP download started', 'success');
+        } catch (error) {
+            console.error('ZIP creation failed:', error);
+            this.showNotification('ZIP creation failed, downloading files individually', 'warning');
+            
+            // Fallback to individual downloads
+            this.conversions.forEach(conversion => {
+                this.downloadFile(conversion);
+            });
+        }
     }
 }
 
