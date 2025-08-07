@@ -1121,6 +1121,163 @@ a {
   background-color: #fffbeb;
 } 
 
+// Font Awesome fallback styles
+body.fa-fallback {
+    .fas, .fa {
+        font-family: inherit !important;
+        font-style: normal !important;
+        font-weight: normal !important;
+    }
+    
+    // Ensure fallback content is visible
+    .fas::before, .fa::before {
+        display: inline-block !important;
+        width: 1em !important;
+        text-align: center !important;
+    }
+}
+
+// Icon fallbacks in case Font Awesome fails to load
+.fas.fa-exchange-alt::before,
+.fa-exchange-alt::before {
+    content: "⇄";
+}
+
+.fas.fa-heart::before,
+.fa-heart::before {
+    content: "♥";
+}
+
+.fas.fa-cloud-upload-alt::before,
+.fa-cloud-upload-alt::before {
+    content: "☁";
+}
+
+.fas.fa-plus::before,
+.fa-plus::before {
+    content: "+";
+}
+
+.fas.fa-file-upload::before,
+.fa-file-upload::before {
+    content: "📁";
+}
+
+.fas.fa-trash::before,
+.fa-trash::before {
+    content: "🗑";
+}
+
+.fas.fa-magic::before,
+.fa-magic::before {
+    content: "✨";
+}
+
+.fas.fa-shield-alt::before,
+.fa-shield-alt::before {
+    content: "🛡";
+}
+
+.fas.fa-bolt::before,
+.fa-bolt::before {
+    content: "⚡";
+}
+
+.fas.fa-mobile-alt::before,
+.fa-mobile-alt::before {
+    content: "📱";
+}
+
+.fas.fa-infinity::before,
+.fa-infinity::before {
+    content: "∞";
+}
+
+.fas.fa-image::before,
+.fa-image::before {
+    content: "🖼";
+}
+
+.fas.fa-file-alt::before,
+.fa-file-alt::before {
+    content: "📄";
+}
+
+.fas.fa-music::before,
+.fa-music::before {
+    content: "🎵";
+}
+
+.fas.fa-video::before,
+.fa-video::before {
+    content: "🎥";
+}
+
+.fas.fa-archive::before,
+.fa-archive::before {
+    content: "📦";
+}
+
+.fas.fa-code::before,
+.fa-code::before {
+    content: "💻";
+}
+
+.fas.fa-cog::before,
+.fa-cog::before {
+    content: "⚙";
+}
+
+.fas.fa-font::before,
+.fa-font::before {
+    content: "🔤";
+}
+
+.fas.fa-database::before,
+.fa-database::before {
+    content: "🗄";
+}
+
+.fas.fa-vector-square::before,
+.fa-vector-square::before {
+    content: "⬜";
+}
+
+.fas.fa-hdd::before,
+.fa-hdd::before {
+    content: "💾";
+}
+
+.fas.fa-microscope::before,
+.fa-microscope::before {
+    content: "🔬";
+}
+
+.fas.fa-check::before,
+.fa-check::before {
+    content: "✓";
+}
+
+.fas.fa-star::before,
+.fa-star::before {
+    content: "⭐";
+}
+
+.fas.fa-pizza-slice::before,
+.fa-pizza-slice::before {
+    content: "🍕";
+}
+
+.fas.fa-share::before,
+.fa-share::before {
+    content: "📤";
+}
+
+.fas.fa-times::before,
+.fa-times::before {
+    content: "✕";
+}
+
 // Support button in navigation
 .nav-support-btn {
     background: linear-gradient(135deg, #ff6b6b, #ee5a24);

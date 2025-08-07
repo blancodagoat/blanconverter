@@ -902,6 +902,35 @@ class FileConverter {
     }
 }
 
+// Font Awesome fallback detection
+function checkFontAwesome() {
+    const testIcon = document.createElement('i');
+    testIcon.className = 'fas fa-heart';
+    testIcon.style.position = 'absolute';
+    testIcon.style.left = '-9999px';
+    document.body.appendChild(testIcon);
+    
+    const computedStyle = window.getComputedStyle(testIcon, ':before');
+    const content = computedStyle.getPropertyValue('content');
+    
+    document.body.removeChild(testIcon);
+    
+    // If Font Awesome is not loaded (content is 'none' or empty), add fallback class
+    if (!content || content === 'none' || content === 'normal') {
+        document.body.classList.add('fa-fallback');
+        console.log('Font Awesome not detected, using fallback icons');
+    }
+}
+
+// Check Font Awesome on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for Font Awesome to load
+    setTimeout(checkFontAwesome, 1000);
+    
+    // Check again after 3 seconds as a backup
+    setTimeout(checkFontAwesome, 3000);
+});
+
 // Support modal functionality
 const supportModal = document.getElementById('supportModal');
 const supportBtn = document.getElementById('supportBtn');
