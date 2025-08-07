@@ -548,6 +548,7 @@ class FileConverter {
 
             this.showResultsSection();
             this.showNotification('All files converted successfully!', 'success');
+            showSupportAfterConversion(); // Show support modal after successful conversion
         } catch (error) {
             console.error('Conversion error:', error);
             this.showNotification('Some files failed to convert', 'error');
@@ -899,6 +900,77 @@ class FileConverter {
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+}
+
+// Support modal functionality
+const supportModal = document.getElementById('supportModal');
+const supportBtn = document.getElementById('supportBtn');
+const supportModalClose = document.getElementById('supportModalClose');
+const supportModalSkip = document.getElementById('supportModalSkip');
+const supportModalThanks = document.getElementById('supportModalThanks');
+const buyPizzaBtn = document.getElementById('buyPizzaBtn');
+const shareBtn = document.getElementById('shareBtn');
+
+// Show support modal
+function showSupportModal() {
+    supportModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+// Hide support modal
+function hideSupportModal() {
+    supportModal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Support button click
+supportBtn.addEventListener('click', showSupportModal);
+
+// Close modal
+supportModalClose.addEventListener('click', hideSupportModal);
+supportModalSkip.addEventListener('click', hideSupportModal);
+supportModalThanks.addEventListener('click', hideSupportModal);
+
+// Close modal when clicking outside
+supportModal.addEventListener('click', (e) => {
+    if (e.target === supportModal) {
+        hideSupportModal();
+    }
+});
+
+// Buy pizza button
+buyPizzaBtn.addEventListener('click', () => {
+    // Trigger the Buy Me a Coffee script
+    const bmcButton = document.querySelector('[data-name="bmc-button"]');
+    if (bmcButton) {
+        bmcButton.click();
+    }
+    hideSupportModal();
+});
+
+// Share button
+shareBtn.addEventListener('click', () => {
+    if (navigator.share) {
+        navigator.share({
+            title: 'BlanConverter - Free Online File Converter',
+            text: 'Check out this amazing free file converter! Support for 50+ formats.',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+    hideSupportModal();
+});
+
+// Show support modal after successful conversion
+function showSupportAfterConversion() {
+    // Wait a bit for the results to be visible
+    setTimeout(() => {
+        showSupportModal();
+    }, 2000);
 }
 
 // Initialize the application when DOM is loaded
