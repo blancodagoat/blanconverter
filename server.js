@@ -84,6 +84,37 @@ app.use(helmet({
     }
 }));
 
+// Enhanced security for Excel file processing
+const excelFileValidator = (file) => {
+    // Additional security checks for Excel files
+    if (file.mimetype === 'application/vnd.ms-excel' || 
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        
+        // Check file size (Excel files should be reasonable)
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit for Excel
+            throw new Error('Excel file size exceeds security limit');
+        }
+        
+        // Check file extension matches MIME type
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (file.mimetype === 'application/vnd.ms-excel' && ext !== '.xls') {
+            throw new Error('File extension mismatch for Excel file');
+        }
+        if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && ext !== '.xlsx') {
+            throw new Error('File extension mismatch for Excel file');
+        }
+        
+        // Log Excel file processing for security monitoring
+        logger.warn('Excel file upload detected - applying enhanced security measures', {
+            filename: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            ip: req?.ip || 'unknown'
+        });
+    }
+    return true;
+};
+
 // Compression middleware
 app.use(compression());
 
