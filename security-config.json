@@ -1,0 +1,39 @@
+{
+  "excelProcessing": {
+    "enabled": true,
+    "maxFileSize": 52428800,
+    "maxUploadsPerHour": 5,
+    "suspiciousPatterns": [
+      "\\.\\./",
+      "javascript:",
+      "data:text/html",
+      "vbscript:",
+      "on\\w+\\s*=",
+      "<script",
+      "<iframe",
+      "<object",
+      "<embed"
+    ]
+  },
+  "monitoring": {
+    "enabled": true,
+    "logSuspiciousActivity": true,
+    "alertThreshold": 3,
+    "cooldownPeriod": 3600000
+  },
+  "emergency": {
+    "killSwitchEnabled": false,
+    "killSwitchReason": null,
+    "killSwitchTimestamp": null
+  },
+  "logging": {
+    "logLevel": "warn",
+    "logToFile": true,
+    "logFilePath": "./security.log"
+  },
+  "notifications": {
+    "emailAlerts": false,
+    "webhookAlerts": false,
+    "webhookUrl": null
+  }
+}

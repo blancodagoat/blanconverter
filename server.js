@@ -25,6 +25,8 @@ const VectorConverter = require('./src/server/vectorConverter');
 const DataConverter = require('./src/server/dataConverter');
 const DiskImageConverter = require('./src/server/diskImageConverter');
 const SpecializedConverter = require('./src/server/specializedConverter');
+const SecurityManager = require('./src/server/securityManager');
+const SecureExcelProcessor = require('./src/server/secureExcelProcessor');
 
 // Comprehensive logging utility
 const logger = {
@@ -85,7 +87,7 @@ app.use(helmet({
 }));
 
 // Enhanced security for Excel file processing
-const excelFileValidator = (file) => {
+const excelFileValidator = (file, req) => {
     // Additional security checks for Excel files
     if (file.mimetype === 'application/vnd.ms-excel' || 
         file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
@@ -104,13 +106,43 @@ const excelFileValidator = (file) => {
             throw new Error('File extension mismatch for Excel file');
         }
         
+        // Additional security checks
+        const suspiciousPatterns = [
+            /\.\.\//,           // Path traversal
+            /javascript:/i,     // JavaScript protocol
+            /data:text\/html/i, // HTML data URLs
+            /vbscript:/i,       // VBScript
+            /on\w+\s*=/i        // Event handlers
+        ];
+        
+        if (suspiciousPatterns.some(pattern => pattern.test(file.originalname))) {
+            throw new Error('Suspicious file name detected');
+        }
+        
         // Log Excel file processing for security monitoring
         logger.warn('Excel file upload detected - applying enhanced security measures', {
             filename: file.originalname,
             size: file.size,
             mimetype: file.mimetype,
-            ip: req?.ip || 'unknown'
+            ip: req?.ip || 'unknown',
+            userAgent: req?.get('User-Agent') || 'unknown',
+            timestamp: new Date().toISOString()
         });
+        
+        // Rate limiting for Excel files (max 5 per IP per hour)
+        const clientIP = req?.ip || 'unknown';
+        if (!req.excelUploadCount) req.excelUploadCount = {};
+        if (!req.excelUploadCount[clientIP]) req.excelUploadCount[clientIP] = { count: 0, resetTime: Date.now() + 3600000 };
+        
+        if (Date.now() > req.excelUploadCount[clientIP].resetTime) {
+            req.excelUploadCount[clientIP] = { count: 0, resetTime: Date.now() + 3600000 };
+        }
+        
+        if (req.excelUploadCount[clientIP].count >= 5) {
+            throw new Error('Excel file upload limit exceeded for this IP');
+        }
+        
+        req.excelUploadCount[clientIP].count++;
     }
     return true;
 };
@@ -193,41 +225,64 @@ const upload = multer({
         files: 10 // Maximum 10 files at once
     },
     fileFilter: (req, file, cb) => {
-        // Check file type
-        const allowedTypes = [
-            // Images
-            'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml',
-            // Documents
-            'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'text/plain', 'application/rtf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/csv', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            // Ebooks
-            'application/epub+zip', 'application/x-mobipocket-ebook', 'application/vnd.amazon.ebook',
-            // Archives
-            'application/zip', 'application/vnd.rar', 'application/x-tar', 'application/gzip', 'application/x-bzip2', 'application/x-7z-compressed',
-            // Fonts
-            'font/ttf', 'font/otf', 'font/woff', 'font/woff2', 'application/vnd.ms-fontobject', 'image/svg+xml',
-            // CAD/3D
-            'application/sla', 'text/plain', 'application/step', 'application/x-3ds', 'application/acad', 'application/dxf', 'model/vnd.collada+xml', 'model/vrml', 'model/x3d+xml',
-            // Vector/Graphics
-            'application/postscript', 'application/x-coreldraw',
-            // Data formats
-            'text/csv', 'application/json', 'application/xml', 'text/yaml',
-            // Disk Images
-            'application/x-iso9660-image', 'application/x-apple-diskimage',
-            // Specialized formats
-            'application/dicom', 'application/gpx+xml', 'application/vnd.google-earth.kml+xml',
-            'application/x-subrip', 'text/vtt',
-            // Audio
-            'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/mp4', 'audio/x-ms-wma', 'audio/aiff',
-            // Video
-            'video/mp4', 'video/avi', 'video/quicktime', 'video/x-matroska', 'video/webm', 'video/x-flv', 'video/x-ms-wmv', 'video/3gpp'
-        ];
+        try {
+            // Use security manager for enhanced validation
+            if (securityManager) {
+                const validation = securityManager.validateFile(file, req);
+                if (!validation.valid) {
+                    return cb(new Error(validation.errors.join('; ')), false);
+                }
+            }
 
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type'), false);
+            // Check file type
+            const allowedTypes = [
+                // Images
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml',
+                // Documents
+                'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain', 'application/rtf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/csv', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                // Ebooks
+                'application/epub+zip', 'application/x-mobipocket-ebook', 'application/vnd.amazon.ebook',
+                // Archives
+                'application/zip', 'application/vnd.rar', 'application/x-tar', 'application/gzip', 'application/x-bzip2', 'application/x-7z-compressed',
+                // Fonts
+                'font/ttf', 'font/otf', 'font/woff', 'font/woff2', 'application/vnd.ms-fontobject', 'image/svg+xml',
+                // CAD/3D
+                'application/sla', 'text/plain', 'application/step', 'application/x-3ds', 'application/acad', 'application/dxf', 'model/vnd.collada+xml', 'model/vrml', 'model/x3d+xml',
+                // Vector/Graphics
+                'application/postscript', 'application/x-coreldraw',
+                // Data formats
+                'text/csv', 'application/json', 'application/xml', 'text/yaml',
+                // Disk Images
+                'application/x-iso9660-image', 'application/x-apple-diskimage',
+                // Specialized formats
+                'application/dicom', 'application/gpx+xml', 'application/vnd.google-earth.kml+xml',
+                'application/x-subrip', 'text/vtt',
+                // Audio
+                'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/mp4', 'audio/x-ms-wma', 'audio/aiff',
+                // Video
+                'video/mp4', 'video/avi', 'video/quicktime', 'video/x-matroska', 'video/webm', 'video/x-flv', 'video/x-ms-wmv', 'video/3gpp'
+            ];
+
+            if (allowedTypes.includes(file.mimetype)) {
+                // Additional Excel file security checks
+                if (file.mimetype === 'application/vnd.ms-excel' || 
+                    file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+                    
+                    // Check if Excel processing is disabled
+                    const excelStatus = securityManager.isExcelProcessingAllowed();
+                    if (!excelStatus.allowed) {
+                        return cb(new Error(excelStatus.reason), false);
+                    }
+                }
+                
+                cb(null, true);
+            } else {
+                cb(new Error('Invalid file type'), false);
+            }
+        } catch (error) {
+            cb(error, false);
         }
     }
 });
@@ -235,7 +290,7 @@ const upload = multer({
 // Initialize converters
 let imageConverter, documentConverter, audioConverter, videoConverter, ebookConverter, 
     archiveConverter, fontConverter, cadConverter, vectorConverter, dataConverter, 
-    diskImageConverter, specializedConverter;
+    diskImageConverter, specializedConverter, securityManager, secureExcelProcessor;
 
 try {
     imageConverter = new ImageConverter();
@@ -250,10 +305,12 @@ try {
     dataConverter = new DataConverter();
     diskImageConverter = new DiskImageConverter();
     specializedConverter = new SpecializedConverter();
+    securityManager = new SecurityManager();
+    secureExcelProcessor = new SecureExcelProcessor();
     
-    logger.info('All converters initialized successfully');
+    logger.info('All converters and security components initialized successfully');
 } catch (error) {
-    logger.error('Failed to initialize converters', error);
+    logger.error('Failed to initialize converters or security components', error);
     throw error;
 }
 
@@ -735,6 +792,94 @@ function getConverter(fileType) {
             return null;
     }
 }
+
+// Security endpoints
+app.get('/api/security/status', (req, res) => {
+    try {
+        const securityStatus = securityManager.getSecurityStatus();
+        res.json({
+            status: 'success',
+            data: securityStatus,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Error getting security status', error);
+        res.status(500).json({
+            error: 'Failed to get security status',
+            message: error.message
+        });
+    }
+});
+
+app.post('/api/security/killswitch', async (req, res) => {
+    try {
+        const { action, reason } = req.body;
+        
+        if (action === 'enable') {
+            const result = await securityManager.enableExcelKillSwitch(reason || 'Manual activation');
+            res.json({
+                status: 'success',
+                message: 'Excel processing disabled',
+                data: result
+            });
+        } else if (action === 'disable') {
+            const result = await securityManager.disableExcelKillSwitch(reason || 'Manual deactivation');
+            res.json({
+                status: 'success',
+                message: 'Excel processing enabled',
+                data: result
+            });
+        } else {
+            res.status(400).json({
+                error: 'Invalid action',
+                message: 'Action must be "enable" or "disable"'
+            });
+        }
+    } catch (error) {
+        logger.error('Error controlling kill switch', error);
+        res.status(500).json({
+            error: 'Failed to control kill switch',
+            message: error.message
+        });
+    }
+});
+
+app.get('/api/security/incidents', (req, res) => {
+    try {
+        const securityStatus = securityManager.getSecurityStatus();
+        res.json({
+            status: 'success',
+            data: {
+                recentIncidents: securityStatus.recentIncidents,
+                suspiciousIPs: securityStatus.suspiciousIPs
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Error getting security incidents', error);
+        res.status(500).json({
+            error: 'Failed to get security incidents',
+            message: error.message
+        });
+    }
+});
+
+app.post('/api/security/reset', (req, res) => {
+    try {
+        securityManager.resetSecurityCounters();
+        res.json({
+            status: 'success',
+            message: 'Security counters reset',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Error resetting security counters', error);
+        res.status(500).json({
+            error: 'Failed to reset security counters',
+            message: error.message
+        });
+    }
+});
 
 // Error handling middleware
 app.use((error, req, res, next) => {
